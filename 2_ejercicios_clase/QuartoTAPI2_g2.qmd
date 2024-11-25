@@ -82,8 +82,8 @@ c. Selecciona los datos de dos provincias
 ```{r}
 elec23_2prov <- elec23 %>% 
   filter(IdProv %in% c(15,36))
-  # # Alternativamente
-  # filter(IdProv==15|IdProv==36)
+  # Alternativamente
+  filter(IdProv==15|IdProv==36)
 
 ```
 d. Selecciona los municipios donde PP saque mejores resultados que PSOE
@@ -157,112 +157,3 @@ elec23 <- elec23 %>%
 
 ```
 
-
-#### Group_by & Summarise
-
-a. Calcula qué porcentaje de apoyo recibe el PSOE en cada municipio respecto al total de votos al PSOE en la provincia
-```{r}
-
-elec23 <- elec23 %>% 
-  group_by(Prov) %>% 
-  mutate(PSOE_prov = sum(PSOE),
-         PSOE_por_prov = PSOE/PSOE_prov*100) %>% 
-  ungroup() 
-
-elec23 %>% 
-  select(Muni,PSOE,PSOE_prov,PSOE_por_prov)
-
-```
-
-
-b. Agrupa los resultados electorales por provincias: Los resultados deberían ser parecidos a los resultados oficiales [(enlace aquí)](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2023-18907)
-```{r}
-
-elec23_prov <- elec23 %>% 
-  group_by(Prov, IdProv) %>%
-  summarise(PSOE = sum(PSOE, na.rm = T),
-            PP = sum(PP, na.rm = T),
-            VOX = sum(VOX, na.rm = T),
-            SUMAR = sum(SUMAR, na.rm = T))
-
-```
-
-c. Agrupa los resultados por tipología de municipio. Obtén el total de censo y votantes. Calcula la participación y los % de apoyo a los partidos
-```{r}
-elec23_tipologia <- elec23 %>% 
-  group_by(municat) %>% # agrupamos por tipo de municipio!
-  summarise(Censo = sum(Censo, na.rm = T),
-            Votantes = sum(Votantes, na.rm = T),
-            PSOE = sum(PSOE, na.rm = T),
-            PP = sum(PP, na.rm = T),
-            VOX = sum(VOX, na.rm = T),
-            SUMAR = sum(SUMAR, na.rm = T)) %>% 
-  mutate(Participacion = Votantes/Censo*100,
-         SUMAR_por = SUMAR/Votantes*100)
-
-```
-
-
-#### Stringr
-
-a. Resultados electorales del municipio con el nombre más corto
-
-```{r}
-elec23 <- elec23 %>% 
-  mutate(caracteres_muni = str_length(Muni))
-
-elec23 %>% 
-  arrange(caracteres_muni) %>% 
-  select(Prov,Muni,Censo,Votantes,PP)
-
-```
-
-
-b. Municipios con nombre de santo
-
-```{r}
-elec23_san <- elec23 %>% 
-  filter(str_detect(Muni,"San |Santo |Santa "))
-```
-
-c. Municipios que empiecen por nombre de santo
-
-```{r}
-elec23_san_inicio <- elec23 %>% 
-  filter(str_detect(Muni,"^San |^Sant |^Santo |^Santa "))
-```
-
-###### Datos de alcaldes
-```{r}
-alcaldes <- read_xlsx("alcaldes_2023.xlsx")
-```
-a. Separa nombre de apellidos
-```{r}
-alcaldes <- alcaldes %>% 
-  separate(NombreCompleto,
-           ", ",
-           into = c("Apellidos","Nombre"))
-```
-b. Homogeneiza formato
-```{r}
-alcaldes <- alcaldes %>% 
-  mutate(Nombre = str_to_title(Nombre),
-         Apellidos = str_to_title(Apellidos))
-```
-c. Alcaldes que se llamen Antonio
-```{r}
-alcalde_antonio <- alcaldes %>% 
-  filter(str_detect(Nombre,"^Antonio$"))
-```
-d. Sánchez: PP vs. PSOE
-```{r}
-alcalde_sanchez <- alcaldes %>% 
-  mutate(espacios = str_count(Apellidos," ")) %>% 
-  filter(str_detect(Apellidos,"^Sánchez|^Sanchez| Sánchez$| Sanchez$"))
-  
-alcalde_sanchez %>% 
-  filter(Partido %in% c("PP","PSOE")) %>% 
-  group_by(Partido) %>% 
-  summarise(count = n())
-  
-```
