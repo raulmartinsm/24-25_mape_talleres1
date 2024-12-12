@@ -1,0 +1,273 @@
+---
+title: "Entrega 1 - Talleres 1"
+author: "Gonzalo Santano Rodríguez"
+format: 
+  html: # Entrega en formato 
+    embed-resources: true # Para que el fichero html contenga toda la info
+editor: visual
+---
+
+```{r setup, include=FALSE}
+# Eliminar los objetos del ambiente de trabajo
+rm(list = ls())
+
+# Opciones para que aparezca la información relacionada con los chunks en el html
+knitr::opts_chunk$set(warning = FALSE, # En caso de mensajes de alerta
+                      message = FALSE, # Otro tipo de mensajes
+                      echo = TRUE, # Mostrar el código
+                      results = TRUE) # Mostrar los resultados del código
+
+# Añadir las librerías que se van a necesitar a lo largo del documento
+library(tidyverse, haven)
+```
+
+# Primera entrega evaluable
+
+Elabora un documento, a poder ser un html con RMarkdown---alternativamente entregando un Word y un script de R---, donde muestres como has trabajado con la base de datos del [QoG](https://www.gu.se/en/quality-government/qog-data/data-downloads/standard-dataset) con información a nivel de país. Usa el link anterior para descargarte el libro de códigos aunque recuerda que los datos que vas a usar son una versión simplificada de la base de datos. Es importante entregar los detalles con todos los pasos seguidos para modificar la base de datos de acuerdo con lo requerido, incluye también una breve descripción de los resultados obtenidos. Para hacer este ejercicio es crucial trabajar con los paquetes de tidyverse y usar la pipa de R ( \|\> o %\>% ).
+
+## Ejercicio 1
+
+###### Carga la base de datos del QoG (se corresponde con la versión simple o Cross-section de los datos del QoG) que encontrarás en [la carpeta de GitHub con el nombre `qog_simple`](https://github.com/pauvallprat/24-25_mape_talleres1/tree/main/1_datos). Guárdala en la carpeta donde guardes las bases de datos de la asignatura y cárgala en el ambiente de R en un objeto que lleve el nombre `qog`.
+
+```{r cargar_datos}
+qog <- readRDS("qog_simple.rds")
+```
+
+## Ejercicio 2
+
+###### Indica las características principales de este objeto, qué información contiene la base de datos, cuantas observaciones y variables tiene.
+
+Tenemos un total de 194 observaciones y 50 variables.
+
+```{r }
+glimpse(qog)
+```
+
+## Ejercicio 3
+
+###### Crea dos objetos que contengan solo una parte de la información del objeto `qog`.
+
+###### a. Un objeto con datos únicamente de los países europeos
+
+```{r Europa}
+qog_europa <- qog |> 
+  filter(continent == "Europe")
+```
+
+###### b. Un objeto con datos de los países con una población superior a 100 millones de habitantes
+
+```{r big}
+qog_big <- qog |> 
+  filter(pwt_pop > 100)
+```
+
+#### Ejercicio 4
+
+###### En este nuevo objeto con los países más poblados, elimina la variable de mortalidad infantil
+
+```{r elim_mort_inf}
+qog_big <- qog_big |> 
+  select(-wdi_mortinf)
+```
+
+## Ejercicio 5
+
+###### En el objeto con los países más poblados, elige cuatro de las variables que consideres más relevantes para analizar políticamente estos países
+
+Elijo cuatro variables relevantes en las que no hay casos perdidos para ninguno de los 14 países. En este caso son el PIB, el índice de democracia, la fragmentación étnica y la esperanza de vida.
+
+```{r elegirvariables}
+qog_big <- qog_big |> 
+  select(pwt_rgdp, bmr_dem, al_ethnic2000, wdi_lifexp)
+```
+
+## Ejercicio 6
+
+###### Crea una variable dicotómica que distinga los países europeos entre los que tienen más de un 25% de escaños ocupados por diputados socialdemócratas y los que no. Haz una tabla simple para ver cuántos países cumplen con esta condición y cuáles no.
+
+```{r dicotomica}
+qog_europa <- qog_europa |> 
+  mutate(socdem = 
+           ifelse(cpds_ls > 25, "Más de 25%","25% o menos") |> 
+           factor()
+         )
+```
+
+Al visualizar la tabla vemos que hay un total de 11 países en los que el número de diputados socialdemócratas supera el 25% de escaños del parlamento.
+
+```{r}
+table(qog_europa$socdem)
+```
+
+## Ejercicio 7
+
+###### Calcula, en la base de datos global, el porcentaje de la población en cada país que es refugiada. (Recuerda que es importante que la escala de las variables sea la misma.)
+
+```{r refugiados}
+qog <- qog |> 
+  mutate(refug = (wdi_refasy/(pwt_pop*1000000)*100))
+```
+
+## Ejercicio 8
+
+###### Ordena los países de menor a mayor porcentaje de mujeres en el parlamento. Muestra los países con menores porcentajes
+
+```{r arrange_women}
+  qog |> arrange(wdi_wip) |> 
+    select(cname, wdi_wip)
+```
+
+## Ejercicio 9
+
+###### Ordena de mayor a menor el porcentaje de población refugiada y crea un nuevo marco de datos con las variables del nombre del país y la variable de porcentaje de población refugiada. Indica los 5 países con mayor población refugiada en términos relativos.
+
+```{r arrange_refugees}
+arrange_refugees <- qog |> 
+  select(cname, refug) |> 
+  arrange(- refug)
+head(arrange_refugees, 5)
+```
+
+## Ejercicio 10
+
+###### Presenta la suma de casos de Covid en el mundo
+
+```{r covid}
+ 
+sum(qog$jht_ccc, na.rm = T)
+
+```
+
+## Ejercicio 11
+
+###### Indica la población mundial por continentes
+
+```{r summarize_continent}
+qog |> 
+  group_by(continent) |> 
+  summarise(pob_conti = sum(pwt_pop, na.rm = TRUE))
+```
+
+## Ejercicio 12
+
+###### Indica el valor máximo en el número de ministros en el gabinete por regiones (`region1`).
+
+```{r max_minist_region}
+qog |> 
+  group_by(region1) |> 
+  summarise(max_min = max(wgov_min, na.rm = T))
+```
+
+## Ejercicio 13
+
+###### Presenta el valor de fragmentación étnica media por continentes
+
+```{r mean_eth_frag}
+qog |>
+  group_by(continent) |>
+  summarise(m_fetn = mean(al_ethnic2000, na.rm = T))
+```
+
+## Ejercicio 14
+
+###### La esperanza de vida, ¿es mayor en las democracias que en los países no democráticos? Justifica tu respuesta.
+
+```{r lifexp_democracy }
+qog |> 
+  group_by(bmr_dem == 1) |> 
+  summarise(m_expdem = mean(wdi_lifexp, na.rm = T))
+```
+
+Tal y como se puede observar, en media la esperanza de vida es mayor en los países democráticos (74.6 años) que en los no democráticos (69.1 años).
+
+## Ejercicio 15
+
+###### Indica cuantos países tienen una letra K en su nombre
+
+```{r letraK}
+qog |>
+  filter(str_detect(cname, pattern = "k|K")) |> 
+  nrow()
+```
+
+## Ejercicio 16
+
+###### Crea una nueva variable que elimine el texto "(the)" al final del nombre de los países y muestra en una tabla las dos variables, la original y la nueva para estos países.
+
+```{r eliminar_the}
+qog <- qog |> 
+  mutate(cname_th = str_remove(cname, "\\(the\\)$"))
+```
+
+Sigue habiendo casos en los que aparece la expresión (the), pero es debido a que pertenecen al nombre completo del país. Para visualizar ambas variables:
+
+```{r}
+qog |> 
+  select(cname, cname_th)
+```
+
+## Ejercicio 17
+
+###### Homogeneiza el estilo de texto en la variable `continent` para que el texto aparezca en mayúsculas y asegúrate que no hay espacios en blanco extra.
+
+```{r trim_continent}
+qog <- qog |> 
+  mutate(continent = (str_to_upper(continent) |> 
+                     str_trim()))
+  
+```
+
+## Ejercicio 18
+
+###### Convierte todos los espacios en la variable region1 en barras bajas (\_).
+
+```{r barra_baja}
+qog <- qog |> 
+  mutate(region1 = str_replace_all(region1, " ", "_"))
+```
+
+## Ejercicio 19 (2 puntos)
+
+###### Piensa una información que puedas resumir a partir de los datos disponibles.
+
+El objetivo es describir de forma breve cómo son los gobiernos en Europa en función del signo político. Para hacer el análisis más sencillo se recodifica la variable `cpds_govlr`, que indica si los ejecutivos son más de izquierdas o más de derechas.
+
+```{r}
+qog_europa <- qog_europa |> 
+  mutate(cpds_govlr = zap_labels(cpds_govlr)) |>
+  mutate(tipgob = case_when(
+    cpds_govlr %in% c(1,2) ~ 1,
+    cpds_govlr %in% 3 ~ 2,
+    cpds_govlr %in% c(4,5) ~ 3
+  ))
+qog_europa <- qog_europa %>% 
+  mutate(tipgob = factor(tipgob, levels = c (1, 2, 3),
+                       labels = c ("Derechas",
+                                   "Balance de poder",
+                                   "Izquierdas")))
+```
+
+En primer lugar, se puede afirmar que en media los gobiernos de izquierda europeos cuentan con un número mayor de ministros.
+
+```{r}
+qog_europa |> 
+  group_by(tipgob) |> 
+  summarise(m_mini = mean(wgov_min, na.rm = T))
+```
+
+Por curiosidad, el gobierno con más ministros es el de Bosnia con un total de 40.
+
+```{r}
+qog_europa |> 
+  arrange(-wgov_min) |> 
+  select(c(cname, wgov_min)) |> 
+  head(n = 1)
+```
+
+Otro dato curioso es que en media, los gobiernos de derechas suelen ocupar un mayor porcentaje de escaños del parlamento, es decir, son más apoyados que los de izquierdas.
+
+```{r}
+qog_europa |> 
+  group_by(tipgob) |> 
+  summarise(m_govsup = mean(cpds_govsup, na.rm = T))
+```

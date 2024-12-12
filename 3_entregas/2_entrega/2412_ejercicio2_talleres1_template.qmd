@@ -1,0 +1,126 @@
+---
+title: "Entrega 2 - Talleres 1"
+author: "Nombre Apellido1 Apellido2"
+format: 
+  html:
+    embed-resources: true
+    code-fold: false
+    code-summary: "Mostrar código."
+    toc: true
+    toc-depth: 3
+    toc-title: Tabla de contenidos
+lang: es
+editor_options: 
+  chunk_output_type: console
+editor: source
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = T,results=T)
+library(pacman)
+p_load(tidyverse,readxl,haven)
+```
+## Descripción
+*Elabora un documento html que incluya los _chunks_ de código empleado ---alternativamente entregando un Word y un script de R---, donde muestres como has trabajado con la base de datos del [QoG](https://www.gu.se/en/quality-government/qog-data/data-downloads/standard-dataset) con información a nivel de país. Usa el link anterior para descargarte el libro de códigos aunque recuerda que los datos que vas a usar son una versión simplificada de la base de datos. Es importante entregar los detalles con todos los pasos seguidos para modificar la base de datos de acuerdo con lo requerido. Para hacer este ejercicio es crucial trabajar con los paquetes de tidyverse y usar la pipa de R ( |> o %>% ).*
+
+#### Ejercicio 1 (1 punto)
+*Carga la base de datos del QoG simplificada que ya usamos en la Prueba 1. Cárgala en el ambiente de R en un objeto que lleve el nombre `qog`.*
+
+```{r}
+
+```
+
+#### Ejercicio 2 (2 puntos)
+*Transforma las variables  `continent`, `region1` y `bmr_dem`  en variables de tipo factor. Define los valores y/o las etiquetas que quieras que aparezcan.*
+```{r}
+
+```
+
+#### Ejercicio 3 (2 puntos)
+*Crea un nuevo marco de datos donde estandardices las siguientes variables e indica si los países que se mencionan estan por encima o por debajo de la media.*
+
+*a. Paro (`wdi_unempedub`). Indica como se posicionan Francia y Uganda respecto a la media.*
+*b. Número de ministros (`wgov_min`). Indica como se posicionan España y Malasia respecto a la media.*
+```{r}
+
+```
+
+#### Ejercicio 4 (2 puntos)
+*La variable `cpds_tg` es, de acuerdo con el libro de códigos, una variable categórica nominal. Sin embargo en el marco de datos `qog` que hemos cargado aparece como una variable numérica. Conviértela en factor, define las etiquetas si es necesario y aplica una función para reordenar los niveles de la variable para que se ordenen de mayor a menor.*
+```{r}
+
+```
+#### Ejercicio 5 (3 puntos)
+*El fichero `sistema_electoral.csv` nos da información del sistema electoral empleado para elegir a los miembros de cada cámara legislativa de todos los países. A nosotros, ahora mismo, solo nos interesa saber cuántas cámaras legislativas existen en cada país. *
+
+*a. Carga este fichero en el ambiente de R como un objeto llamado `siselec` y cambia la unidad de observación del marco de datos de país-cámara a país, conservando únicamente el número de cámaras legislativas de cada país (la nueva variable se podría llamar `numleg`).*
+
+```{r}
+
+```
+
+*b. Combina el marco de datos `qog` con el marco de datos `siselec`, nos interesa conservar toda la información del `qog` y añadirle los datos de `siselec`. Recuerda que debes identificar una variable que sirva de clave y que permita identificar las observaciones que se refieren, en cada marco de datos, a la misma unidad. Guarda el resultado de unir ambos marcos de datos en un objeto llamado `qog_c`.*
+
+```{r}
+
+```
+
+*c. Haz todas las combinaciones de uniones  posibles (`right_join()`, `inner_join()`, `full_join()`) y guárda cada una de ellas en un objeto distinto. Explica brevemente por qué cambia el número de observaciones en cada una de ellas*
+
+```{r}
+
+```
+
+#### Ejercicio 6 (2 puntos)
+*Combina la base de datos del QoG con los datos a nivel regional (NUTS) para los países europeos. *
+
+*a. Carga los datos y guárdalos en el ambiente con el nombre `nuts`. *
+
+```{r}
+
+```
+
+*b. ¿Tiene más sentido emplear `left_join()` o `right_join()`?*
+
+```{r}
+
+```
+
+*c. Combina los marcos de datos `qog` y `nuts` de diferentes modos y comenta cuál es el nivel de observación en cada marco de datos resultante.*
+
+
+
+#### Ejercicio 7 (3 puntos)
+*Usa la base de datos del QoG en formato panel (país-año). Selecciona solo las observaciones desde el año 1980 y resume el valor de una variable, p.ej. mortalidad (`wdi_mortm`) o esperanza de vida (`wdi_lifexp`), por país y década. Luego, convierte estos valores en variables separadas, es decir crea una variable que sea Mortalidad80, otra que sea Mortalidad90, etc. (Pista, usa una función `pivot_`)*
+
+```{r}
+
+
+```
+
+#### Ejercicio 8 (2 puntos)
+*Haz un loop que te permita crear un objeto distinto con las observaciones de cada uno de los continentes por separado.*
+
+```{r}
+
+
+```
+
+#### Ejercicio 9 (3 puntos)
+*Carga la base de datos del QoG en formato panel que podemos encontrar en la siguiente url ([https://www.qogdata.pol.gu.se/data/qog_std_ts_jan24_stata14.dta](https://www.qogdata.pol.gu.se/data/qog_std_ts_jan24_stata14.dta)).*
+*Es la misma información con la que trabajamos pero en formato panel. Selecciona solo las variables `cname`, `year`,`vdem_libdem` (indicador de democracia liberal), `icrg_qog` (indicador de calidad del gobierno), y todas las variables que empiecen por `ciri_`, correspondientes al proyecto CIRIGHTS que miden niveles en diferentes tipos de libertades.*
+*Para más información de las variables consulta el [libro de códigos](https://www.qogdata.pol.gu.se/data/codebook_std_jan24.pdf).*
+
+*a. Filtra las observaciones desde el año 1980 que es cuando empieza el proyecto y rellena los valores perdidos en alguna de las variables anteriores; justifica la elección del método utilizado.*
+
+```{r}
+
+```
+
+*b. Si quisieramos estimar el valor de `vdem_libdem` pero teniendo en cuenta la presencia de valores perdidos en los datos, explica los pasos que seguirías usando el paquete `mice`.*
+
+```{r}
+
+
+```

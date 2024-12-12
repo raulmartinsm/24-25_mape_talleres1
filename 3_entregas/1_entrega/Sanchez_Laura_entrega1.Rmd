@@ -1,0 +1,323 @@
+---
+title: "ENTREGA 1"
+author: "Laura Sánchez Martín"
+date: "2024-11-13"
+output:
+  html_document:
+    embed-resources: true # Para que el fichero html contenga toda la info
+  editor: visual
+  theme: united
+  toc: TRUE
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+rm(list = ls())
+
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE, results=TRUE)
+
+
+library(tidyverse)
+library(dplyr)
+library(haven)
+library(car)
+library(Rcpp)
+library(Hmisc)
+library(devtools)
+library(utils)
+library(gmodels)
+library(labelled)
+library(Hmisc)
+library(psych)
+```
+
+# Primera entrega evaluable
+
+Elabora un documento, a poder ser un html con RMarkdown---alternativamente entregando un Word y un script de R---, donde muestres como has trabajado con la base de datos del QoG con información a nivel de país. Es importante entregar los detalles con todos los pasos seguidos para modificar la base de datos de acuerdo con lo requerido, incluye también una breve descripción de los resultados obtenidos.
+
+## Ejercicio 1
+
+Carga la base de datos del QoG (se corresponde con la versión simple o Cross-section de los datos del QoG) que encontrarás en la carpeta de GitHub con el nombre qog_simple. Guárdala en la carpeta donde guardes las bases de datos de la asignatura y cárgala en el ambiente de R en un objeto que lleve el nombre qog.
+
+```{r}
+qog <- readRDS("qog_simple.rds")
+
+```
+
+## Ejercicio 2
+
+Indica las características principales de este objeto, qué información contiene la base de datos, cuantas observaciones y variables tiene.
+
+```{r}
+glimpse(qog)
+
+```
+
+Contenido de la base de datos:
+
+-   Variables: 50
+-   Observaciones: 194
+
+### Ejercicio 3
+
+Crea dos objetos que contengan solo una parte de la información del objeto qog.
+
+#### a. Un objeto con datos únicamente de los países europeos
+
+```{r}
+
+EUpais <- qog %>% 
+  filter(continent == "Europe")
+
+```
+
+Contenido del objeto:
+
+-   Variables: 50
+-   Observaciones: 43
+
+#### b. Un objeto con datos de los países con una población superior a 100 millones de habitantes
+
+```{r}
+
+mas100pais <- qog %>% 
+  filter(pwt_pop > 100000000)
+
+```
+
+Contenido del objeto:
+
+-   Variables: 52
+-   Observaciones: 14
+
+### Ejercicio 4
+
+En este nuevo objeto con los países más poblados, elimina la variable de mortalidad infantil
+
+```{r}
+
+mas100pais$wdi_mortinf <- NULL
+  
+
+```
+
+### Ejercicio 5
+
+En el objeto con los países más poblados, elige cuatro de las variables que consideres más relevantes para analizar políticamente estos países.
+
+Escogeré: - Nombre: cname - Producto interior bruto: pwt_rgdp - Desempleados con educación básica: wdi_unempedub - bmr_dem
+
+```{r}
+
+mas100pais_seleccionado <- mas100pais %>%
+  select("cname", "pwt_rgdp", "wdi_unempedub", "bmr_dem")
+
+
+```
+
+### Ejercicio 6
+
+Crea una variable dicotómica que distinga los países europeos entre los que tienen más de un 25% de escaños ocupados por diputados socialdemócratas y los que no. Haz una tabla simple para ver cuántos países cumplen con esta condición y cuáles no.
+
+```{r}
+
+qog <- qog %>% 
+  mutate(esc25socialdem = ifelse(cpds_ls > 25.0, 1, 0)) %>% 
+  mutate(esc25socialdem = factor(esc25socialdem,
+                                 levels = c(0,1),
+                                 labels = c("Esc-25social", "Esc+25social")))
+
+tabla_25_socialdem <- table(qog$esc25socialdem)
+print(tabla_25_socialdem)
+
+```
+
+DUDA, deberían aparecer los nombres de los paises?
+
+### Ejercicio 7
+
+Calcula, en la base de datos global, el porcentaje de la población en cada país que es refugiada. (Recuerda que es importante que la escala de las variables sea la misma.)
+
+```{r}
+
+qog$pwt_pop <- qog$pwt_pop * 1e6
+
+qog$porcent_refu <- (qog$wdi_refasy / qog$pwt_pop) * 100
+
+
+```
+
+### Ejercicio 8
+
+Ordena los países de menor a mayor porcentaje de mujeres en el parlamento. Muestra los países con menores porcentajes
+
+```{r}
+
+muj_parl_ordenado <- qog %>% 
+arrange(wdi_wip)
+
+head(muj_parl_ordenado)
+
+```
+
+### Ejercicio 9
+
+Ordena de mayor a menor el porcentaje de población refugiada y crea un nuevo marco de datos con las variables del nombre del país y la variable de porcentaje de población refugiada. Indica los 5 países con mayor población refugiada en términos relativos.
+
+```{r}
+
+top5_refu <- qog %>%
+  arrange(desc(porcent_refu)) %>%
+  select(cname, porcent_refu) %>%
+  slice(1:5)
+  
+
+print(top5_refu)
+
+
+```
+
+### Ejercicio 10
+
+Presenta la suma de casos de Covid en el mundo
+
+```{r}
+suma_casos_covid <- qog %>% 
+  summarise(total_covid_casos= sum(jht_ccc, na.rm=TRUE))
+
+print(suma_casos_covid)
+```
+
+### Ejercicio 11
+
+Indica la población mundial por continentes
+
+```{r}
+
+poblacion_continente <- qog %>% 
+  group_by(continent) %>% 
+  summarise(total_poblacion = sum(pwt_pop, na.rm = TRUE))
+
+print(poblacion_continente)
+
+  
+```
+
+### Ejercicio 12
+
+Indica el valor máximo en el número de ministros en el gabinete por regiones (region1).
+
+wgob_min
+
+```{r}
+minis_region <- qog %>% 
+  group_by(region1) %>% 
+  summarise(max_ministros = max(wgov_min, na.rm = TRUE))
+
+print(minis_region)
+```
+
+### Ejercicio 13
+
+Presenta el valor de fragmentación étnica media por continentes
+
+```{r}
+
+frag_etnica_media <- qog %>% 
+  group_by(continent) %>% 
+  summarise(prom_etnico2000 = mean(al_ethnic2000), na.rm = TRUE)
+
+print(frag_etnica_media)
+
+```
+
+No sé porque hay NA en 3 continentes, no tiene sentido. El codigo esta bien hecho. Lo intentaría comprender por mi misma, pero el tiempo juega en mi contra. 
+
+### Ejercicio 14
+
+La esperanza de vida, ¿es mayor en las democracias que en los países no democráticos? Justifica tu respuesta.
+
+bmr_dem wdi_life xp
+
+```{r}
+
+esper_vida_tipo <- qog %>%
+  group_by(bmr_dem) %>%
+  summarise(esperanza_vida_media = mean(wdi_lifexp, na.rm = TRUE))
+
+
+print(esper_vida_tipo)
+
+
+```
+
+Sí, la esperanza de vida es mayor en las democracias.
+
+Los países democráticos tienen una media de esperanza de vida de 74.6 años, mientras que los países no democráticos tienen una media de 69.1 años. Esto sugiere que los países democráticos, en promedio, ofrecen mejores condiciones de vida, acceso a servicios de salud, y estabilidad económica que pueden influir en una mayor longevidad.
+
+Aunque los datos muestran una diferencia significativa en las medias, esta conclusión se basa en una descripción simple, sin una prueba estadística debido a la insuficiencia de datos.
+
+### Ejercicio 15
+
+Indica cuantos países tienen una letra K en su nombre
+
+```{r letraK}
+paises_con_k <- qog %>% 
+  filter(str_detect(cname, "k|K"))
+
+print(paises_con_k)
+
+```
+
+### Ejercicio 16
+
+Crea una nueva variable que elimine el texto "(the)" al final del nombre de los países y muestra en una tabla las dos variables, la original y la nueva para estos países.
+
+```{r}
+qog<- qog %>% 
+  mutate(sin_the = str_remove(cname, "\\s*\\(the\\)$"))
+
+```
+
+### Ejercicio 17
+
+Homogeneiza el estilo de texto en la variable continent para que el texto aparezca en mayúsculas y asegúrate que no hay espacios en blanco extra
+
+```{r}
+qog$continent <- toupper(trimws(qog$continent))
+
+print(unique(qog$continent))
+```
+
+### Ejercicio 18
+
+Convierte todos los espacios en la variable region1 en barras bajas (\_).
+
+```{r}
+qog <- qog %>% 
+  mutate(region1 = str_replace_all(region1, " ", "_"))
+  
+```
+
+### Ejercicio 19 (2 puntos)
+
+Piensa una información que puedas resumir a partir de los datos disponibles.
+
+El ejercicio que propongo es:
+
+El porcentaje de desempleo con educación básica, ¿es mayor en las democracias que en los países no democráticos? Justifica tu respuesta.
+
+```{r}
+porc_desem_tipo <- qog %>%
+  group_by(bmr_dem) %>%
+  summarise(porc_desem_tipo = mean(wdi_unempedub, na.rm = TRUE))
+
+
+print(porc_desem_tipo)
+```
+
+Se puede observar como el porcentaje de desempleados con educación básica es mayor en los países democráticos. Esto puede deberse a la mayor automatización y complejidad productivo de los países democráticos, con industrias más avanzadas y sofisticadas. Otro motivo sería el mayor acceso a la educación secundaria y superior, lo que genera una poblacion laboral con un nivel educativo más alto en promedio.
